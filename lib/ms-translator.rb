@@ -3,8 +3,8 @@ require 'nokogiri'
 module Microsoft
   class << self
     # Retun translation. Convenience method for Microsoft::Translator::SOAP.translate
-    def Translator(content, from, to)
-      Microsoft::Translator::SOAP.translate(content, from, to)
+    def Translator(content, from, to, content_type = 'text/plain')
+      Microsoft::Translator::SOAP.translate(content, from, to, content_type)
     end
   end
   module Translator
@@ -25,21 +25,23 @@ module Microsoft
 <soapenv:Body>
 <m:Translate xmlns:m="http://api.microsofttranslator.com/v1/soap.svc">
 <m:appId>{{APP_ID}}</m:appId>
-<m:text>{{TEXT}}</m:text>
+<m:text><![CDATA[{{TEXT}}]]></m:text>
 <m:from>{{LANG_FROM}}</m:from>
 <m:to>{{LANG_TO}}</m:to>
+<m:contentType>{{CONTENT_TYPE}}</m:contentType>
 </m:Translate>
 </soapenv:Body>
 </soapenv:Envelope>}
 
-      def self.translate(content, from, to)
+      def self.translate(content, from, to, content_type = 'text/plain')
         init_class_vars
 
         raise "Application id not set! Use `Microsoft::Translator.set_app_id(my_app_id)` to set it." unless Microsoft::Translator.const_defined?('APP_ID')
 
         @request.body = SOAP_BODY.sub('{{TEXT}}', content).
           sub('{{APP_ID}}', Microsoft::Translator::APP_ID).
-          sub('{{LANG_FROM}}', from).sub('{{LANG_TO}}', to)
+          sub('{{LANG_FROM}}', from).sub('{{LANG_TO}}', to).
+          sub('{{CONTENT_TYPE}}', content_type)
 
         response = Net::HTTP.new(@tanslate_uri.host, @tanslate_uri.port).start do |http|
           http.request(@request)
